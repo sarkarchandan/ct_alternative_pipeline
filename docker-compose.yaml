@@ -1,6 +1,22 @@
 version: '3'
 
 services:
+
+  spark:
+    build: ./spark
+    container_name: spark
+    hostname: spark
+    user: root
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./data:/home
+    depends_on:
+      - kafka
+      - data_abstractor
+    networks:
+      datapipeline_net:
+
   zookeeper:
     image: wurstmeister/zookeeper:latest
     container_name: zookeeper
@@ -14,21 +30,12 @@ services:
       datapipeline_net:
 
   kafka:
-    image: wurstmeister/kafka:latest
+    build: ./kafka
     container_name: kafka
     hostname: kafka
     restart: always
     ports:
       - 9092:9092
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_ADVERTISED_HOST_NAME=localhost
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CREATE_TOPICS=Topic:1:1:compact
-      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
     depends_on:
       - zookeeper
     healthcheck:
