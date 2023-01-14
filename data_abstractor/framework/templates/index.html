@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    Data Abstractor
+{% endblock %}
+
+{% block body %}
+    <h1>Dataset Abstractor</h1>
+    <form action="/" method="POST">
+        <label>Rotation Interval (degrees):</label>
+        <input type="text" name="rot_int" id="rot_int"><br>
+        <label>Angle Start (degrees):</label>
+        <input type="text" name="angle_start" id="angle_start"><br>
+        <label>Angle End (degrees):</label>
+        <input type="text" name="angle_end" id="angle_end"><br>
+        <label>Image Dimension (integer):</label>
+        <input type="text" name="img_dim" id="img_dim"><br>
+        <label>Padding (integer):</label>
+        <input type="text" name="padding" id="padding"><br>
+        <input type="submit" value="Create Dataset">
+    </form>
+{% endblock %}

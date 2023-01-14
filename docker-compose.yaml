@@ -1,0 +1,73 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    hostname: zookeeper
+    restart: always
+    ports:
+    - 2181:2181
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      datapipeline_net:
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    hostname: kafka
+    restart: always
+    ports:
+      - 9092:9092
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_HOST_NAME=localhost
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CREATE_TOPICS=Topic:1:1:compact
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      start_period: 15s
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    links:
+      - zookeeper
+    networks:
+      datapipeline_net:
+
+  data_producer:
+    build: ./producer
+    container_name: data_producer
+    restart: on-failure
+    depends_on:
+      kafka:
+        condition: service_healthy
+    links:
+      - kafka
+    networks:
+      datapipeline_net:
+
+  data_abstractor:
+    restart: on-failure
+    build: ./data_abstractor
+    container_name: data_abstructor
+    ports:
+      - "9991:5000"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    links:
+      - kafka
+      - data_producer
+    networks:
+      datapipeline_net:
+
+networks:
+  datapipeline_net:
