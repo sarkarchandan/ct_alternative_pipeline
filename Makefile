@@ -1,8 +1,8 @@
 setup:
 	docker-compose up
 gen:
-	python producer/main.py
+	python producer/server.py
 recon:
-	python reconstructor/main.py
+	python reconstructor/server.py
 clean:
 	docker-compose down

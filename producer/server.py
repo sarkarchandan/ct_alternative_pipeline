@@ -10,13 +10,20 @@ from threading import Thread
 import time
 from typing import Dict
 import json
+from pathlib import Path
+import sys
+
+from flask import Flask
 from kafka import KafkaProducer
 from flask import render_template
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from framework import app
-from framework.data import DataGenerator
 
+framework_path: str = Path().absolute().__str__()
+print(f"Abs Path: {framework_path}")
+sys.path.append(framework_path)
+
+from framework.gen import DataGenerator
 
 def publish_image_data(generator: DataGenerator) -> None:
     producer: KafkaProducer = KafkaProducer (
@@ -30,18 +37,15 @@ def publish_image_data(generator: DataGenerator) -> None:
         producer.send(topic="image_data", value=event)
         time.sleep(0.5)
 
-generator: DataGenerator = DataGenerator.generator_from(
-    config="./producer/framework/config.yaml")
-
-t: Thread = Thread(target=publish_image_data, args=(generator, ))
-t.start()
+# Initializes container process
+app: Flask = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index() -> str:
     """Defines route for the application"""
     fig: Figure = Figure()
     axs: Axes = fig.subplots()
-    axs.imshow(generator.base_image)
+    axs.imshow(generator.abstract_obj_image)
     buf: BytesIO = BytesIO()
     fig.savefig(buf, format="png")
     img_data: bytes = base64.b64encode(buf.getbuffer()).decode("ascii")
@@ -49,4 +53,8 @@ def index() -> str:
     
 
 if __name__ == "__main__":
-    pass
+    generator: DataGenerator = DataGenerator.generator_from(
+        config="config.yaml")
+    t: Thread = Thread(target=publish_image_data, args=(generator, ))
+    t.start()
+    app.run(host="0.0.0.0", port=9991)

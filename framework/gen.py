@@ -1,7 +1,7 @@
 """
-    data.py
+    gen.py
     -------
-    Implements abstract data source
+    Encapsulates utilities for generating abstract 2D objects dataset
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class DataGenerator:
         return cls(**cfg["data_gen"])
 
     @property
-    def base_image(self) -> np.ndarray:
+    def abstract_obj_image(self) -> np.ndarray:
         """Computes base object image"""
         img: np.ndarray = np.ones(shape=(self.obj_dim, self.obj_dim))
         diag_len: int = len(np.diag(img) // 2)
@@ -46,19 +46,27 @@ class DataGenerator:
         pad_img[(xv - 0.1)**2 + (yv - 0.2)**2 < 0.01] = 2
         return pad_img
 
+    @property
+    def dataset_size(self) -> int:
+        return np.arange(
+            start=self.angle_start, 
+            stop=self.angle_end, 
+            step=self.rotation_interval).shape[0]
+
     def __call__(self) -> Generator[np.ndarray, None, None]:
         angles: np.ndarray = np.arange(
             start=self.angle_start, 
             stop=self.angle_end, 
             step=self.rotation_interval) * (np.pi / 180)
         samples: List[np.ndarray] = [
-            rotate(image=self.base_image, angle=angle * 180/np.pi) 
+            rotate(image=self.abstract_obj_image, angle=angle * 180/np.pi) 
             for angle in angles
         ]
         for sample in samples:
             yield sample
         
         
-
+if __name__ == "__main__":
+    pass
 
     
