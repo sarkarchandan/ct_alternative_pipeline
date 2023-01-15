@@ -31,10 +31,7 @@ def publish_image_data(generator: DataGenerator) -> None:
         value_serializer=lambda x: json.dumps(x).encode('utf-8')
     )
     for idx,sample in enumerate(generator()):
-        event: Dict[str, str] = {
-            f"sample_{idx}": str(sample.tolist())
-        }
-        producer.send(topic="image_data", value=event)
+        producer.send(topic="image_data", value=str(sample.tolist()))
         time.sleep(0.5)
 
 # Initializes container process

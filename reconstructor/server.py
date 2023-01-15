@@ -3,8 +3,10 @@ import sys
 import time
 import json
 from threading import Thread
+from datetime import datetime
 
-from flask import Flask, render_template
+import numpy as np
+from flask import Flask, render_template, Response
 from kafka import KafkaConsumer
 
 framework_path: str = Path().absolute().__str__()
@@ -19,7 +21,11 @@ app: Flask = Flask(__name__)
 @app.route("/", methods=["GET"])
 def index() -> str:
     """Defines route for the application"""
-    return render_template("index.html")
+    return render_template("index.html", embed="This came from Python")
+
+@app.route("/fetch_status", methods=["GET"])
+def fetch_status() -> str:
+    return datetime.now().__str__()
 
 def subscribe_for_image_data() -> None:
     consumer: KafkaConsumer = KafkaConsumer(
@@ -31,8 +37,8 @@ def subscribe_for_image_data() -> None:
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
     for events in consumer:
-        event_data = events.value
-        print(f'Received: {event_data}')
+        image: np.ndarray = np.array(list(events.value))
+        print(f"Received Image: {image.shape}")
         time.sleep(2)
 
 if __name__ == '__main__':

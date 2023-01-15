@@ -1,11 +1,24 @@
 {% extends 'base.html' %}
 
 {% block head %}
-    Reconstructor
+    <title>Reconstructor</title>
 {% endblock %}
 
 {% block body %}
     <h1>Reconstructor</h1>
 
+    Date & Time: <span id="fetch_status"></span>
+
+    <script type="text/javascript">
+        var fetch_status = document.getElementById("fetch_status")
+        function fetchStatus() {
+            fetch("/fetch_status")
+            .then(response => response.text())
+            .then(status => (fetch_status.innerHTML = status))
+        }
+        setInterval(fetchStatus, 5000);
+    </script>
+
+    
     <!-- <img src="data:image/png;base64,{{img_data}}"/> -->
 {% endblock %}
