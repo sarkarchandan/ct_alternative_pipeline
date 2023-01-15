@@ -53,7 +53,7 @@ def index() -> str:
     
 
 if __name__ == "__main__":
-    generator: DataGenerator = DataGenerator.generator_from(
+    generator: DataGenerator = DataGenerator.generate_from(
         config="config.yaml")
     t: Thread = Thread(target=publish_image_data, args=(generator, ))
     t.start()

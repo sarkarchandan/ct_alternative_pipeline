@@ -23,7 +23,7 @@ class DataGenerator:
     padding: int
 
     @classmethod
-    def generator_from(cls, config: str) -> DataGenerator:
+    def generate_from(cls, config: str) -> DataGenerator:
         cfg: Dict[str, Any]
         with open(file=config, mode="r") as stream:
             cfg = yaml.safe_load(stream=stream)
