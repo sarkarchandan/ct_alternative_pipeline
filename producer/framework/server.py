@@ -31,7 +31,7 @@ def publish_image_data(generator: DataGenerator) -> None:
         time.sleep(0.5)
 
 generator: DataGenerator = DataGenerator.generator_from(
-    config="/home/chandansarkar/workspace/repos/data_pipelines/ct_spark_pipeline/producer/framework/config.yaml")
+    config="./producer/framework/config.yaml")
 
 t: Thread = Thread(target=publish_image_data, args=(generator, ))
 t.start()
