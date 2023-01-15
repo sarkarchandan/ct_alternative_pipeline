@@ -4,12 +4,16 @@
     Defines routes of the data abstractor process endpoints
 """
 
+import base64
+from io import BytesIO
 from threading import Thread
 import time
 from typing import Dict
 import json
 from kafka import KafkaProducer
 from flask import render_template
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 from framework import app
 from framework.data import DataGenerator
 
@@ -35,7 +39,14 @@ t.start()
 @app.route("/", methods=["GET"])
 def index() -> str:
     """Defines route for the application"""
-    return render_template("index.html")
-        
+    fig: Figure = Figure()
+    axs: Axes = fig.subplots()
+    axs.imshow(generator.base_image)
+    buf: BytesIO = BytesIO()
+    fig.savefig(buf, format="png")
+    img_data: bytes = base64.b64encode(buf.getbuffer()).decode("ascii")
+    return render_template("index.html", img_data=img_data)
+    
+
 if __name__ == "__main__":
     pass
