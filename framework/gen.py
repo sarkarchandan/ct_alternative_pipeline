@@ -6,12 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Generator, List, Dict, Any
+from typing import Generator, List, Dict, Any, Tuple
 from dataclasses import dataclass
 import yaml
 import numpy as np
 from skimage.transform import rotate
-
 
 @dataclass
 class DataGenerator:
@@ -23,7 +22,7 @@ class DataGenerator:
     padding: int
 
     @classmethod
-    def generate_from(cls, config: str) -> DataGenerator:
+    def from_config(cls, config: str = "config.yaml") -> DataGenerator:
         cfg: Dict[str, Any]
         with open(file=config, mode="r") as stream:
             cfg = yaml.safe_load(stream=stream)
@@ -47,11 +46,13 @@ class DataGenerator:
         return pad_img
 
     @property
-    def dataset_size(self) -> int:
-        return np.arange(
+    def dataset_shape(self) -> Tuple[int, int, int]:
+        padded_dim: int = (2 * self.obj_dim) + self.obj_dim + (2 * 10)
+        length: int = np.arange(
             start=self.angle_start, 
             stop=self.angle_end, 
             step=self.rotation_interval).shape[0]
+        return (length, padded_dim, padded_dim)
 
     def __call__(self) -> Generator[np.ndarray, None, None]:
         angles: np.ndarray = np.arange(

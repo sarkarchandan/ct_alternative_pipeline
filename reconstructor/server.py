@@ -1,10 +1,14 @@
 from pathlib import Path
+from typing import List
+import base64
 import sys
+import io
 import time
 import json
 from threading import Thread
 from datetime import datetime
 
+from PIL import Image
 import numpy as np
 from flask import Flask, render_template, Response
 from kafka import KafkaConsumer
@@ -18,6 +22,9 @@ from framework.recon import Reconstructor
 # Initializes container process
 app: Flask = Flask(__name__)
 
+# Buffer
+data_buffer: List[np.ndarray] = []
+
 @app.route("/", methods=["GET"])
 def index() -> str:
     """Defines route for the application"""
@@ -25,7 +32,7 @@ def index() -> str:
 
 @app.route("/fetch_status", methods=["GET"])
 def fetch_status() -> str:
-    return datetime.now().__str__()
+    return str(len(data_buffer))
 
 def subscribe_for_image_data() -> None:
     consumer: KafkaConsumer = KafkaConsumer(
@@ -37,9 +44,15 @@ def subscribe_for_image_data() -> None:
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
     for events in consumer:
-        image: np.ndarray = np.array(list(events.value))
-        print(f"Received Image: {image.shape}")
+        if events.value == "last_batch":
+            break
+        deserialized: Image = Image.open(io.BytesIO(
+            base64.b64decode(events.value["data"])))
+        data_buffer.append(np.array(deserialized))
         time.sleep(2)
+    print("Last batch of data received")
+    print(f"Length of the buffer: {len(data_buffer)}")
+    print(f"After conversion: {np.array(data_buffer).shape}")
 
 if __name__ == '__main__':
     t: Thread = Thread(target=subscribe_for_image_data, args=())

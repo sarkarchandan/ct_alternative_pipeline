@@ -7,7 +7,7 @@
 {% block body %}
     <h1>Reconstructor</h1>
 
-    Date & Time: <span id="fetch_status"></span>
+    Fetched <span id="fetch_status"></span> sample(s).
 
     <script type="text/javascript">
         var fetch_status = document.getElementById("fetch_status")
@@ -19,6 +19,5 @@
         setInterval(fetchStatus, 5000);
     </script>
 
-    
     <!-- <img src="data:image/png;base64,{{img_data}}"/> -->
 {% endblock %}
