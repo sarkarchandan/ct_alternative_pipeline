@@ -1,0 +1,7 @@
+# Configuration for generating sample object dataset
+data_gen:
+  obj_dim: 100
+  angle_start: 0
+  angle_end: 180
+  rotation_interval: 5
+  padding: 10

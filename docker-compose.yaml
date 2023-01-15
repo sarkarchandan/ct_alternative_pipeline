@@ -1,80 +1,23 @@
-version: '3'
-
+version: '2'
 services:
 
-  spark:
-    build: ./spark
-    container_name: spark
-    hostname: spark
-    user: root
-    ports:
-      - '8080:8080'
-    volumes:
-      - ./data:/home
-    depends_on:
-      - kafka
-      - data_abstractor
-    networks:
-      datapipeline_net:
-
   zookeeper:
-    image: wurstmeister/zookeeper:latest
-    container_name: zookeeper
-    hostname: zookeeper
-    restart: always
+    image: wurstmeister/zookeeper:3.4.6
     ports:
-    - 2181:2181
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      datapipeline_net:
+     - "2181:2181"
 
   kafka:
-    build: ./kafka
-    container_name: kafka
-    hostname: kafka
-    restart: always
+    image: wurstmeister/kafka
     ports:
-      - 9092:9092
-    depends_on:
-      - zookeeper
-    healthcheck:
-      test: nc -z localhost 9092 || exit -1
-      start_period: 15s
-      interval: 5s
-      timeout: 10s
-      retries: 10
-    links:
-      - zookeeper
-    networks:
-      datapipeline_net:
-
-  data_producer:
-    build: ./producer
-    container_name: data_producer
-    restart: on-failure
-    depends_on:
-      kafka:
-        condition: service_healthy
-    links:
-      - kafka
-    networks:
-      datapipeline_net:
-
-  data_abstractor:
-    restart: on-failure
-    build: ./data_abstractor
-    container_name: data_abstructor
-    ports:
-      - "9991:5000"
-    depends_on:
-      kafka:
-        condition: service_healthy
-    links:
-      - kafka
-      - data_producer
-    networks:
-      datapipeline_net:
-
-networks:
-  datapipeline_net:
+     - "9092:9092"
+    expose:
+     - "9093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "image_data:1:1"
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
