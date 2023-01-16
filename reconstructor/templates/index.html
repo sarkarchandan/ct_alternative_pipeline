@@ -15,6 +15,13 @@
             fetch("/fetch_status")
             .then(response => response.text())
             .then(status => (fetch_status.innerHTML = status))
+            // For this last then statement if condition should be 
+            // used to send a get request to a dedicated endpoint 
+            // to bring up the visualization of the fetched images 
+            // and reconstruction.
+            // Visibility could be altered using DOM manipulation
+            // document.getElementById("myP").style.visibility = "hidden"; 
+            // or "visible"
         }
         setInterval(fetchStatus, 5000);
     </script>

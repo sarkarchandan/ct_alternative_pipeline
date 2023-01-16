@@ -6,7 +6,6 @@ import io
 import time
 import json
 from threading import Thread
-from datetime import datetime
 
 from PIL import Image
 import numpy as np
