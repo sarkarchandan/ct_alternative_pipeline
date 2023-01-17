@@ -15,6 +15,7 @@ from skimage.transform import rotate
 
 @dataclass
 class DataGenerator:
+    """Generates abstract 2D objects dataset"""
 
     obj_dim: int
     angle_start: int
@@ -24,7 +25,11 @@ class DataGenerator:
 
     @classmethod
     def from_config(cls, config: str = "config.yaml") -> DataGenerator:
-        """Instantiates abstract dataset generator from config"""
+        """Instantiates abstract dataset generator from config
+        
+        Args:
+            config: Configuration file path
+        """
         cfg: Dict[str, Any]
         with open(file=config, mode="r") as stream:
             cfg = yaml.safe_load(stream=stream)
@@ -32,7 +37,7 @@ class DataGenerator:
 
     @property
     def abstract_obj_image(self) -> np.ndarray:
-        """Creates abstract object image"""
+        """Creates 2D abstract object"""
         img: np.ndarray = np.ones(shape=(self.obj_dim, self.obj_dim))
         diag_len: int = len(np.diag(img) // 2)
         pad_img: np.ndarray = np.pad(
@@ -44,7 +49,7 @@ class DataGenerator:
         pad_img[(xv - 0.1)**2 + (yv - 0.2)**2 < 0.01] = 2
         return pad_img
 
-    def plot_samples(self, 
+    def show_samples(self, 
         num_samples: int = 5, 
         figsize: Tuple[int, int] = (15, 15)) -> None:
         """Plots a subsection of the abstract object dataset
@@ -58,16 +63,10 @@ class DataGenerator:
             axes[idx].imshow(samples[idx]);
             axes[idx].axis('off');
 
-    def to_array(self) -> np.ndarray:
-        """Convenient method to yield the dataset as an ndarray"""
-        return np.array(list(self()))
-
-    def create_sinogram(self) -> np.ndarray:
-        pass
-
     @property
     def dataset_shape(self) -> Tuple[int, int, int]:
-        """Convenient method to yield the shape of the dataset"""
+        """Convenient method to yield the shape of the dataset as a 
+        tuple of (batch_size, height, width)"""
         padded_dim: int = (2 * self.obj_dim) + self.obj_dim + (2 * 10)
         length: int = np.arange(
             start=self.angle_start, 

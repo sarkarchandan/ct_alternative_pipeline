@@ -1,7 +1,7 @@
 """
     vis.py
     ------
-    Encapsulates visualization utilities
+    Encapsulates data visualization utilities
 """
 
 from enum import Enum, auto
@@ -37,11 +37,12 @@ def magnitude_spectrum_for(img: np.ndarray) -> None:
         )
     )
     _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(10, 15))
-    ax1.imshow(img, cmap='gray')
-    ax1.set_title('Input Image')
-    ax2.imshow(mag_spc, cmap='gray')
-    ax2.set_title('DFT - Magnitude Spectrum')
+    ax1.imshow(img, cmap='gray');
+    ax1.set_title('Input Image');
+    ax2.imshow(mag_spc, cmap='gray');
+    ax2.set_title('DFT - Magnitude Spectrum');
     plt.show();
+
 
 def fourier_analysis_for(img: np.ndarray, filtering: Filtering) -> None:
     """Implements a filtering strategy for the frequency domain transformation 
@@ -102,6 +103,38 @@ def fourier_analysis_for(img: np.ndarray, filtering: Filtering) -> None:
     ax3.imshow(filtered_img, cmap='gray')
     ax3.set_title('Filtered Image')
     plt.show();
+
+
+def imshow(source: np.ndarray, **kwargs) -> None:
+    """Convenient function for general visualization of images or sinograms
+
+    Args:
+        source: Source to visualize
+        kwargs: Optional keyword arguments
+            - title: Plot title
+            - x_label: Label for x axis
+            - y_label: Label for y axis
+            - pcolor: Use of pseudo color plot 
+            - lsp: Linear space of the scanner
+            - angles: Angles of rotation
+    """
+    title: str = kwargs.get("title", None)
+    x_label: str = kwargs.get("x_label", None)
+    y_label: str = kwargs.get("y_label", None)
+    pcolor: str = kwargs.get("pcolor", None)
+    lsp: np.ndarray = kwargs.get("lsp", None)
+    angles: np.ndarray = kwargs.get("angles", None)
+    if pcolor is not None:
+        assert(angles is not None and lsp is not None)
+        plt.pcolor(angles, lsp, source);
+    else:
+        plt.imshow(source);
+    if title is not None:
+        plt.title(title);
+    if x_label is not None:
+        plt.xlabel(x_label, fontsize=20);
+    if y_label is not None:
+        plt.ylabel(y_label, fontsize=20);
 
 
 if __name__ == "__main__":
