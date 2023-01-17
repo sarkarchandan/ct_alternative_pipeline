@@ -4,7 +4,7 @@ setup:
 	cp ./framework/static/css/styles.css ./producer/static/css/
 	cp ./framework/static/css/styles.css ./reconstructor/static/css/
 	docker-compose up
-gen:
+prod:
 	python producer/server.py
 recon:
 	python reconstructor/server.py
@@ -14,3 +14,5 @@ clean:
 	rm ./producer/static/css/styles.css
 	rm ./reconstructor/static/css/styles.css
 	docker-compose down
+lint:
+	pylint framework producer reconstructor
