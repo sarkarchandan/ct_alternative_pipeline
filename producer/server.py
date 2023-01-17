@@ -6,7 +6,7 @@
 
 import base64
 from io import BytesIO
-from typing import Dict
+from typing import Dict, List
 from threading import Thread
 import time
 import json
@@ -16,7 +16,8 @@ import sys
 import cv2
 from flask import Flask
 from kafka import KafkaProducer
-from flask import render_template
+from flask import render_template, request
+import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
@@ -26,6 +27,12 @@ sys.path.append(framework_path)
 from framework.gen import DataGenerator
 
 def publish_image_data(generator: DataGenerator) -> None:
+    """Publishes abstract 2D object sample data set to the predetermined 
+    kafka topic
+
+    Args:
+        generator: Generator object for abstract data set
+    """
     producer: KafkaProducer = KafkaProducer (
         bootstrap_servers=['localhost:9092'],
         value_serializer=lambda x: json.dumps(x).encode('utf-8')
@@ -43,20 +50,31 @@ def publish_image_data(generator: DataGenerator) -> None:
 # Initializes container process
 app: Flask = Flask(__name__)
 
-@app.route("/", methods=["GET"])
+# Initialize DataGenerator
+generator: DataGenerator = DataGenerator.from_config()
+
+@app.route("/", methods=["GET", "POST"])
 def index() -> str:
     """Defines route for the application"""
-    fig: Figure = Figure()
-    axs: Axes = fig.subplots()
-    axs.imshow(generator.abstract_obj_image)
+    my_dpi: int = 192
+    fig: Figure = Figure(figsize=(600/my_dpi, 400/my_dpi))
+    axs: Axes = fig.subplots(nrows=1, ncols=5)
+    vis_datasets: List[np.ndarray] = list(generator())[:5]
+    for idx in range(len(vis_datasets)):
+        axs[idx].imshow(vis_datasets[idx]);
+        axs[idx].axis('off');
     buf: BytesIO = BytesIO()
-    fig.savefig(buf, format="png")
+    fig.savefig(buf, format="png", dpi=my_dpi)
     img_data: bytes = base64.b64encode(buf.getbuffer()).decode("ascii")
-    return render_template("index.html", img_data=img_data)
-    
+    if request.method == "POST":
+        if request.form.get("stream_button") == "stream":
+            print("Producer: Publishing asynchronously...")
+            t: Thread = Thread(target=publish_image_data, args=(generator, ))
+            t.start()
+            return render_template("index.html", img_data=img_data, publish_state="Publishing")
+    elif request.method == "GET":
+        return render_template("index.html", img_data=img_data)
+
 
 if __name__ == "__main__":
-    generator: DataGenerator = DataGenerator.from_config()
-    t: Thread = Thread(target=publish_image_data, args=(generator, ))
-    t.start()
     app.run(host="0.0.0.0", port=9991)
