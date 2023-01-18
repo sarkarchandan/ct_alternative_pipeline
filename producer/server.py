@@ -25,6 +25,7 @@ framework_path: str = Path().absolute().__str__()
 sys.path.append(framework_path)
 
 from framework.gen import DataGenerator
+from framework import vis
 
 def publish_image_data(generator: DataGenerator) -> None:
     """Publishes abstract 2D object sample data set to the predetermined 
@@ -56,22 +57,17 @@ generator: DataGenerator = DataGenerator.from_config()
 @app.route("/", methods=["GET", "POST"])
 def index() -> str:
     """Defines route for the application"""
-    my_dpi: int = 192
-    fig: Figure = Figure(figsize=(600/my_dpi, 400/my_dpi))
-    axs: Axes = fig.subplots(nrows=1, ncols=5)
-    vis_datasets: List[np.ndarray] = list(generator())[:5]
-    for idx in range(len(vis_datasets)):
-        axs[idx].imshow(vis_datasets[idx]);
-        axs[idx].axis('off');
-    buf: BytesIO = BytesIO()
-    fig.savefig(buf, format="png", dpi=my_dpi)
-    img_data: bytes = base64.b64encode(buf.getbuffer()).decode("ascii")
+    num_images: int = 5
+    vis_images: List[np.ndarray] = list(generator())[:num_images]
+    img_data: bytes = vis.serialize(images=vis_images, rows=1, cols=num_images)
     if request.method == "POST":
         if request.form.get("stream_button") == "stream":
             print("Producer: Publishing asynchronously...")
             t: Thread = Thread(target=publish_image_data, args=(generator, ))
             t.start()
-            return render_template("index.html", img_data=img_data, publish_state="Streaming Data")
+            return render_template("index.html", 
+                img_data=img_data, 
+                publish_state="Streaming Data")
     elif request.method == "GET":
         return render_template("index.html", img_data=img_data)
 

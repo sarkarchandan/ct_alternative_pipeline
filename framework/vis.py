@@ -4,9 +4,14 @@
     Encapsulates data visualization utilities
 """
 
+import base64
+from io import BytesIO
+from typing import List, Tuple
 from enum import Enum, auto
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 import cv2
 
 
@@ -135,6 +140,32 @@ def imshow(source: np.ndarray, **kwargs) -> None:
         plt.xlabel(x_label, fontsize=20);
     if y_label is not None:
         plt.ylabel(y_label, fontsize=20);
+
+
+def serialize(images: List[np.ndarray], **kwargs) -> bytes:
+    """Serializes a list of images as base64 encoded byte array to be 
+    visualized on the browser
+
+    Args:
+        images: List of images
+        kwargs: Keyword arguments
+            dpi: Estimated dpi of the screen, default 192
+            figsize: a tuple denoting figure size, default (600, 400)
+            rows: Number of images in row direction, default 1
+            cols: Number of images in column direction, default 1
+    """
+    dpi: int = kwargs.get("dpi", 192)
+    figsize: Tuple[int, int] = kwargs.get("figsize", (600, 400))
+    rows: int = kwargs.get("rows", 1)
+    cols:int = kwargs.get("cols", 1)
+    fig: Figure = Figure(figsize=(figsize[0]/dpi, figsize[1]/dpi))
+    axs: Axes = fig.subplots(nrows=rows, ncols=cols)
+    for idx in range(len(images)):
+        axs[idx].imshow(images[idx]);
+        axs[idx].axis('off');
+    buf: BytesIO = BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi)
+    return base64.b64encode(buf.getbuffer()).decode("ascii")
 
 
 if __name__ == "__main__":
