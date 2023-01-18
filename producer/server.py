@@ -59,7 +59,8 @@ def index() -> str:
     """Defines route for the application"""
     num_images: int = 5
     vis_images: List[np.ndarray] = list(generator())[:num_images]
-    img_data: bytes = vis.serialize(images=vis_images, rows=1, cols=num_images)
+    img_data: bytes = vis.serialize_multiple(
+        images=vis_images, rows=1, cols=num_images)
     if request.method == "POST":
         if request.form.get("stream_button") == "stream":
             print("Producer: Publishing asynchronously...")

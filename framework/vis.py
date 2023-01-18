@@ -142,13 +142,14 @@ def imshow(source: np.ndarray, **kwargs) -> None:
         plt.ylabel(y_label, fontsize=20);
 
 
-def serialize(images: List[np.ndarray], **kwargs) -> bytes:
+def serialize_multiple(images: List[np.ndarray], **kwargs) -> bytes:
     """Serializes a list of images as base64 encoded byte array to be 
     visualized on the browser
 
     Args:
         images: List of images
         kwargs: Keyword arguments
+
             dpi: Estimated dpi of the screen, default 192
             figsize: a tuple denoting figure size, default (600, 400)
             rows: Number of images in row direction, default 1
@@ -163,6 +164,46 @@ def serialize(images: List[np.ndarray], **kwargs) -> bytes:
     for idx in range(len(images)):
         axs[idx].imshow(images[idx]);
         axs[idx].axis('off');
+    buf: BytesIO = BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi)
+    return base64.b64encode(buf.getbuffer()).decode("ascii")
+
+def serialize(source: np.ndarray, **kwargs) -> bytes:
+    """Serializes a single ndarray either as colormap or a single image
+
+    Args:
+        source: NDArray to be plotted
+        kwargs: keyword arguments
+            
+            dpi: Estimated dpi of the screen, default 192
+            pcolor: Whether colormap should be used instead of imshow
+            lsp: Linear space spanned on the surface of the scanner
+            angles: Angles of rotation
+            x_label: Label for x-axis
+            y_label: Label for y-axis
+            title: Tile for the plot
+    """
+    dpi: int = kwargs.get("dpi", 192)
+    # figsize: Tuple[int, int] = kwargs.get("figsize", (600, 400))
+    pcolor: bool = kwargs.get("pcolor", False)
+    lsp: np.ndarray = kwargs.get("lsp", None)
+    angles: np.ndarray = kwargs.get("angles", None)
+    x_label: str = kwargs.get("x_label", None)
+    y_label: str = kwargs.get("y_label", None)
+    title: str = kwargs.get("title", None)
+    fig: Figure = Figure()
+    axs: Axes = fig.subplots()
+    if pcolor:
+        axs.pcolor(angles, lsp, source);
+    else:
+        axs.imshow(source)
+        axs.axis('off');
+    if x_label is not None:
+        axs.set_xlabel(xlabel=x_label)
+    if y_label is not None:
+        axs.set_ylabel(ylabel=y_label)
+    if title is not None:
+        axs.set_title(title)
     buf: BytesIO = BytesIO()
     fig.savefig(buf, format="png", dpi=dpi)
     return base64.b64encode(buf.getbuffer()).decode("ascii")

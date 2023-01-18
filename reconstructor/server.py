@@ -1,22 +1,23 @@
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Any, Tuple, Callable
 import base64
 import sys
 import io
 import time
 import json
+import concurrent.futures
 from threading import Thread
-import yaml
 from PIL import Image
 import numpy as np
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, request
 from kafka import KafkaConsumer
 
 framework_path: str = Path().absolute().__str__()
-print(f"Abs Path: {framework_path}")
 sys.path.append(framework_path)
 
-from framework.recon import Reconstructor
+from framework.recon import Reconstructor, Reconstruction
+from framework import utils
+from framework import vis
 
 # Initializes container process
 app: Flask = Flask(__name__)
@@ -28,20 +29,54 @@ data_buffer: List[np.ndarray] = []
 reconstructor: Reconstructor
 
 def is_last_batch() -> bool:
-    cfg: Dict[str, Any]
-    with open(file="config.yaml", mode="r") as stream:
-            cfg = yaml.safe_load(stream=stream)["data_gen"]
+    cfg: utils.Config = utils.Config()
     ds_len: int = np.arange(
-            start=int(cfg["angle_start"]), 
-            stop=int(cfg["angle_end"]), 
-            step=int(cfg["rotation_interval"])).shape[0]
+            start=int(cfg[utils.KEY_START_ANGlE]), 
+            stop=int(cfg[utils.KEY_END_ANGLE]), 
+            step=int(cfg[utils.KEY_ROTATION_INTERVAL])).shape[0]
     return len(data_buffer) == ds_len
 
-@app.route("/", methods=["GET"])
-def index() -> str:
+@app.route("/", methods=["GET", "POST"])
+def index() -> Any:
     """Defines route for the application"""
-    return render_template("index.html", embed="This came from Python")
+    if request.method == "GET":
+        return render_template("index.html", ftc_st="Ready To Receive")
+    elif request.method == "POST":
+        cfg: utils.Config = utils.Config()
+        rot_prof: Tuple[int, int, int] = (
+            int(cfg[utils.KEY_START_ANGlE]), 
+            int(cfg[utils.KEY_END_ANGLE]), 
+            int(cfg[utils.KEY_ROTATION_INTERVAL])
+        )
+        global reconstructor
+        reconstructor = Reconstructor(
+            dataset=data_buffer, 
+            rotation_profile=rot_prof
+        )
+        sgs: np.ndarray = reconstructor.create_sinogram().transpose()
+        sinogram: bytes = vis.serialize(
+            source=sgs, 
+            pcolor=True, 
+            lsp=reconstructor.linear_space, 
+            angles=reconstructor.angles_rad,
+            x_label=r"$\theta$ (rad)",
+            y_label=r"$\ln({I_0}/I)$",
+            title="Sinogram")
+        recon_result: np.ndarray
+        with concurrent.futures.ThreadPoolExecutor() as exec:
+            future: Any = exec.submit(
+                reconstructor.reconstruct, 
+                Reconstruction.FILTERED_BACK_PROJECTION)
+            recon_result = future.result()
+        reconstruction: bytearray = vis.serialize(
+            source=recon_result, 
+            title="Reconstructed with Filtered Back Projection")
+        return render_template(
+            "index.html", 
+            sinogram=sinogram, 
+            reconstruction=reconstruction)
 
+        
 @app.route("/fetch_status", methods=["GET"])
 def fetch_status() -> str:
     if is_last_batch():
@@ -63,10 +98,9 @@ def subscribe_for_image_data() -> None:
         deserialized: Image = Image.open(io.BytesIO(
             base64.b64decode(events.value["data"])))
         data_buffer.append(np.array(deserialized))
-        time.sleep(2)
+        time.sleep(1)
     print("Last batch of data received")
     print(f"Length of the buffer: {len(data_buffer)}")
-    print(f"After conversion: {np.array(data_buffer).shape}")
 
 if __name__ == '__main__':
     t: Thread = Thread(target=subscribe_for_image_data, args=())

@@ -9,7 +9,7 @@
 
     <div style="display: flex; align-items: center; justify-content: flex-start; gap: 20px;">
         <h2>Data Fetch Status: </h2>
-        <h2 id="fetch_status">Ready to Receive</h2>    
+        <h2 id="fetch_status"> {{ ftc_st }}</h2>    
     </div>
 
     <form id="recon_form" method="post" accept="/" style="visibility: hidden;">
@@ -19,12 +19,18 @@
             value="reconstruct" 
             style="width: 100%; font-size: 22px; padding: 15px; background-color: black; color: white; border: 4px solid black; text-transform: uppercase; cursor: pointer;">
     </form>
+
+    <div id="reconstruction_container" style="visibility: hidden;">
+        <img class="sinogram" src="data:image/png;base64,{{sinogram}}" style="height: 600px; padding: 0; margin: 0;"/>
+        <img class="reconstruction" src="data:image/png;base64,{{reconstruction}}" style="height: 600px; padding: 0; margin: 0;"/>
+    </div>
     
     <script type="text/javascript">
         const ctrl = new AbortController()
         const abort_signal = ctrl.signal
         var fs_h3 = document.getElementById("fetch_status")
         var recon_button = document.getElementById("recon_form")
+        var recons_cont = document.getElementById("reconstruction_container")
         function fetchStatus() {
             fetch("/fetch_status", {
                 method: "get",
@@ -37,27 +43,13 @@
                     ctrl.abort()
                     console.log("Fetching aborted...")
                     recon_button.style.visibility = "visible"
+                    recons_cont.style.visibility = "visible"
                 }else {
                     fs_h3.innerHTML = "Received " + status + " samples"
                 }
             })
-            // For this last then statement if condition should be 
-            // used to send a get request to a dedicated endpoint 
-            // to bring up the visualization of the fetched images 
-            // and reconstruction.
-            // Visibility could be altered using DOM manipulation
-            // document.getElementById("myP").style.visibility = "hidden"; 
-            // or "visible". Following is the overall idea.
-            // We'd try to define a button identical to the producer 
-            // side to trigger the reconstruction(possibly asynchronously).
-            // For that we would alter the route handler against GET and POST 
-            // methods, identical to what we did for the producer. When the 
-            // result is available we'd trigger the rendering of the outcome.
-            // Above text element needs to be altered with an h3 element 
-            // for better visibility.
         }
         setInterval(fetchStatus, 5000);
     </script>
 
-    <!-- <img src="data:image/png;base64,{{img_data}}"/> -->
 {% endblock %}
