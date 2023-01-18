@@ -1,3 +1,4 @@
+# pylint: disable=unnecessary-semicolon
 """
     recon.py
     --------
@@ -17,18 +18,18 @@ class Reconstruction(Enum):
     REGULAR_BACK_PROJECTION = auto()
     FILTERED_BACK_PROJECTION = auto()
 
+
 class Reconstructor:
-    """Encapsulates utilities for reconstructing the abstract 2D object 
-    from a set of rotated samples. In this demo implementation we assume 
-    the samples themselves as the rotated attenuation profiles of the 2D 
-    abstract object."""
+    """Encapsulates utilities for reconstructing the abstract 2D object from a
+    set of rotated samples. In this demo implementation we assume the samples
+    themselves as the rotated attenuation profiles of the 2D abstract object."""
 
     dataset: List[np.ndarray]
     rotation_profile: Tuple[int, int, int]
-    
-    def __init__(self, 
-        dataset: List[np.ndarray], 
-        rotation_profile: Tuple[int, int, int]) -> None:
+
+    def __init__(self,
+                 dataset: List[np.ndarray],
+                 rotation_profile: Tuple[int, int, int]) -> None:
         """
         Args: 
             dataset: A list of rotated samples (attenuation profiles of the 
@@ -43,15 +44,15 @@ class Reconstructor:
     def linear_space(self) -> np.ndarray:
         """Linear space across the object. This would be required to compute 
         the differential over the same"""
-        assert(len(self.dataset) > 0)
+        assert (len(self.dataset) > 0)
         return np.linspace(start=-1, stop=1, num=self.dataset[0].shape[0])
 
     @property
     def angles_rad(self) -> np.ndarray:
         """Angles of rotation (in radians)"""
         return np.arange(
-            start=self.rotation_profile[0], 
-            stop=self.rotation_profile[1], 
+            start=self.rotation_profile[0],
+            stop=self.rotation_profile[1],
             step=self.rotation_profile[2]) * (np.pi / 180)
 
     def create_sinogram(self) -> np.ndarray:
@@ -61,34 +62,33 @@ class Reconstructor:
         return np.array(
             [rotation.sum(axis=0) * diff_space for rotation in self.dataset])
 
-    def show_projections(self, 
-        num_samples: int = 5, 
-        figsize: Tuple[int, int] = (15, 2)) -> None:
-        """Displays given number of projections (line integrals) for the 
-        samples
+    def show_projections(self,
+                         num_samples: int = 5,
+                         figsize: Tuple[int, int] = (15, 2)) -> None:
+        """Displays given number of projections (line integrals) for the samples
 
         Args:
             num_samples: (Optional)Number of samples to display
             figsize: (Optional)Size of the PyPlot figure object
         """
         angles: np.ndarray = np.arange(
-            start=self.rotation_profile[0], 
-            stop=self.rotation_profile[1], 
+            start=self.rotation_profile[0],
+            stop=self.rotation_profile[1],
             step=self.rotation_profile[2])[:num_samples]
         sgs: np.ndarray = self.create_sinogram()
         _, axes = plt.subplots(nrows=1, ncols=len(angles), figsize=figsize)
         for idx in range(len(angles)):
             axes[idx].plot(self.linear_space, sgs[idx, :]);
-            axes[idx].set_xlabel(f'Angle: {angles[idx]}');
-            axes[idx].set_ylabel('$\ln({I_0}/I)$');  
+            axes[idx].set_xlabel(f"Angle: {angles[idx]}");
+            axes[idx].set_ylabel("$\ln({I_0}/I)$");
 
     @staticmethod
     def _interpolate(
-        x: float, 
-        y: float, 
-        lsp: np.ndarray,
-        angles: np.ndarray,
-        source: np.ndarray) -> np.ndarray:
+            x: float,
+            y: float,
+            lsp: np.ndarray,
+            angles: np.ndarray,
+            source: np.ndarray) -> np.ndarray:
         """Defines an interpolation function for sampling of values during 
         reconstruction of the abstract 2D image object. This function is 
         subjected to be vectorized for indexing.
@@ -104,12 +104,12 @@ class Reconstructor:
         """
         diff_angles: np.ndarray = np.diff(angles)[0]
         interpolation: Callable[[float, float], float] = RectBivariateSpline(
-            x=lsp, 
-            y=angles, 
+            x=lsp,
+            y=angles,
             z=source)
         return interpolation(
-            x * np.cos(angles) + y * np.sin(angles), angles, 
-            grid=False).sum() * diff_angles 
+            x * np.cos(angles) + y * np.sin(angles), angles,
+            grid=False).sum() * diff_angles
 
     def reconstruct(self, with_strategy: Reconstruction) -> np.ndarray:
         """Reconstructs the abstract object using the projections sinogram 
@@ -128,9 +128,9 @@ class Reconstructor:
             # Interpolate to sample values with the size of the image using 
             # sinogram as source
             return vec_interpolate(
-                x=grid_x, 
-                y=grid_y, 
-                lsp=lsp, 
+                x=grid_x,
+                y=grid_y,
+                lsp=lsp,
                 angles=angles,
                 source=sinogram.transpose())
         # Fourier transform of 1D sinogram for all rotations
@@ -145,12 +145,12 @@ class Reconstructor:
         # Interpolate to sample values with the size of the image using 
         # inverse fourier transform of filtered 1D projection as source
         return vec_interpolate(
-            x=grid_x, 
-            y=grid_y, 
-            lsp=lsp, 
-            angles=angles, 
+            x=grid_x,
+            y=grid_y,
+            lsp=lsp,
+            angles=angles,
             source=p_ifft)
-            
+
 
 if __name__ == "__main__":
     pass
