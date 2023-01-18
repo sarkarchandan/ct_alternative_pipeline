@@ -71,7 +71,7 @@ def index() -> str:
             print("Producer: Publishing asynchronously...")
             t: Thread = Thread(target=publish_image_data, args=(generator, ))
             t.start()
-            return render_template("index.html", img_data=img_data, publish_state="Publishing")
+            return render_template("index.html", img_data=img_data, publish_state="Streaming Data")
     elif request.method == "GET":
         return render_template("index.html", img_data=img_data)
 

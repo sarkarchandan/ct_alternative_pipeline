@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 import base64
 import sys
 import io
 import time
 import json
 from threading import Thread
-
+import yaml
 from PIL import Image
 import numpy as np
 from flask import Flask, render_template, Response
@@ -21,8 +21,21 @@ from framework.recon import Reconstructor
 # Initializes container process
 app: Flask = Flask(__name__)
 
-# Buffer
+# Buffer for incoming data
 data_buffer: List[np.ndarray] = []
+
+# Declaration of the reconstructor object, which would be instantiated 
+reconstructor: Reconstructor
+
+def is_last_batch() -> bool:
+    cfg: Dict[str, Any]
+    with open(file="config.yaml", mode="r") as stream:
+            cfg = yaml.safe_load(stream=stream)["data_gen"]
+    ds_len: int = np.arange(
+            start=int(cfg["angle_start"]), 
+            stop=int(cfg["angle_end"]), 
+            step=int(cfg["rotation_interval"])).shape[0]
+    return len(data_buffer) == ds_len
 
 @app.route("/", methods=["GET"])
 def index() -> str:
@@ -31,6 +44,8 @@ def index() -> str:
 
 @app.route("/fetch_status", methods=["GET"])
 def fetch_status() -> str:
+    if is_last_batch():
+        return "last_batch"
     return str(len(data_buffer))
 
 def subscribe_for_image_data() -> None:
